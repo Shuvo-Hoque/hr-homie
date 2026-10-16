@@ -65,6 +65,35 @@ System Settings → Privacy & Security (a Developer ID certificate and notarisat
 bundle identifier stays `com.shuvo.deskbuddy` from the app's earlier name, so settings carry over and a newly opened
 copy replaces any older one.
 
+## Security and privacy
+
+HR Homie never reads passwords, secrets, the keychain, the clipboard, the camera or the microphone, and it asks
+for no permissions. Everything it can see or do:
+
+| What | What the app does | Where |
+|---|---|---|
+| Keyboard | Never watched. The eye and walk timers only ask macOS how many seconds have passed since the last input of any kind, not which key it was | `AppDelegate.swift` (`CGEventSource.secondsSinceLastEventType`) |
+| Mouse | Only the pointer's position (mouse moves and drags), so a click on him or on the bubble lands and every other click passes through. It never sees what you click in other apps | `BuddyController.swift` (`startMouseTracking`) |
+| Windows | For "sits on your window": the position and size of the front app's windows. No titles and no contents (those would need Screen Recording permission, which the app never asks for) | `Windows.swift` |
+| Network | One HTTPS request: the official JAKIM e-Solat prayer timetable for zone WLY01, sending only the zone and a date range. The current year ships in the app, so this happens about once a year | `PrayerTimes.swift` |
+| Storage | Settings and the day's water count in the app's own preferences (`UserDefaults`), and the cached timetable in Application Support. Nothing is uploaded | `Store.swift`, `PrayerTimes.swift` |
+| Other apps | Quits other running copies of HR Homie itself (same bundle identifier), nothing else | `AppDelegate.swift` (`quitOtherCopies`) |
+| Login | Starts at login only when you turn on **Open at Login** (`SMAppService`) | `AppDelegate.swift` |
+
+`--snapshot` and `--demo` are developer test modes that render the corner to a PNG or capture the screen. They run
+only when the binary is started from Terminal with those flags, and screen capture needs Screen Recording
+permission, which macOS asks for first. Opening the app normally never runs them.
+
+**Distribution is the weak point, not the app.** The app is ad-hoc signed and not notarised, so macOS can't confirm
+who built it or that nobody changed it; that's why the first open needs **Open Anyway**. Until it's signed with a
+Developer ID and notarised (which removes the warning):
+
+- Share the DMG from one place only, and post its SHA-256 alongside it. Anyone can check their download with
+  `shasum -a 256 HR-Homie-1.0.0.dmg`. The 1.0.0 DMG shared on 16 October 2026 is
+  `ce8d161e29f0ee96472ba1b5044b12b0ef70522f93b0c6cc79251214d5b21388`; a rebuild gives a new hash.
+- Don't open copies passed on from anywhere else.
+- Company Macs under device management may block unsigned apps; check with IT before rolling it out widely.
+
 ## How it's put together
 
 | Part | File |
